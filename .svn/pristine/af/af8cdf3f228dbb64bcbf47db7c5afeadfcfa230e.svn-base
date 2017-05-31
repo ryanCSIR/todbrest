@@ -1,0 +1,128 @@
+package model;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+
+/**
+ * The persistent class for the WFD0026_TODB_EXTERNAL_AUTHORS database table.
+ * 
+ */
+@Entity
+@Table(name="WFD0026_TODB_EXTERNAL_AUTHORS")
+public class ExternalAuthor implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	@Column(name="AUTHOR_AFFILIATION", length=400)
+	private String authorAffiliation;
+
+	@Column(name="AUTHOR_NAME", length=400)
+	private String authorName;
+
+	@Temporal(TemporalType.DATE)
+	@Column(name="INSERT_DATE")
+	private Date insertDate;
+
+	@Column(name="INSERT_PGM_NAME", length=400)
+	private String insertPgmName;
+
+	@Column(name="INSERT_USER", length=30)
+	private String insertUser;
+
+	@Id
+	@Column(name="REQUEST_NO", length=30)
+	private String requestNo;
+
+	@Temporal(TemporalType.DATE)
+	@Column(name="UPDATE_DATE")
+	private Date updateDate;
+
+	@Column(name="UPDATE_PGM_NAME", length=400)
+	private String updatePgmName;
+
+	@Column(name="UPDATE_USER", length=30)
+	private String updateUser;
+
+	public ExternalAuthor() {
+	}
+
+	public String getAuthorAffiliation() {
+		return this.authorAffiliation;
+	}
+
+	public void setAuthorAffiliation(String authorAffiliation) {
+		this.authorAffiliation = authorAffiliation;
+	}
+
+	public String getAuthorName() {
+		return this.authorName;
+	}
+
+	public void setAuthorName(String authorName) {
+		this.authorName = authorName;
+	}
+
+	public Date getInsertDate() {
+		return this.insertDate;
+	}
+
+	public void setInsertDate(Date insertDate) {
+		this.insertDate = insertDate;
+	}
+
+	public String getInsertPgmName() {
+		return this.insertPgmName;
+	}
+
+	public void setInsertPgmName(String insertPgmName) {
+		this.insertPgmName = insertPgmName;
+	}
+
+	public String getInsertUser() {
+		return this.insertUser;
+	}
+
+	public void setInsertUser(String insertUser) {
+		this.insertUser = insertUser;
+	}
+
+	public String getRequestNo() {
+		return this.requestNo;
+	}
+
+	public void setRequestNo(String requestNo) {
+		this.requestNo = requestNo;
+	}
+
+	public Date getUpdateDate() {
+		return this.updateDate;
+	}
+
+	public void setUpdateDate(Date updateDate) {
+		this.updateDate = updateDate;
+	}
+
+	public String getUpdatePgmName() {
+		return this.updatePgmName;
+	}
+
+	public void setUpdatePgmName(String updatePgmName) {
+		this.updatePgmName = updatePgmName;
+	}
+
+	public String getUpdateUser() {
+		return this.updateUser;
+	}
+
+	public void setUpdateUser(String updateUser) {
+		this.updateUser = updateUser;
+	}
+
+}

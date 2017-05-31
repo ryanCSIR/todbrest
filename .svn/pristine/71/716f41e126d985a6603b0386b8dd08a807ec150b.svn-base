@@ -1,0 +1,679 @@
+package dao;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.lang.annotation.ElementType;
+import java.io.Serializable;
+
+import org.hibernate.impl.SessionImpl;
+import org.hibernate.validator.HibernateValidator;
+import org.hibernate.validator.HibernateValidatorConfiguration;
+import org.hibernate.validator.HibernateValidatorFactory;
+import org.hibernate.validator.cfg.ConstraintMapping;
+import org.hibernate.validator.cfg.defs.NotNullDef;
+import org.springframework.core.annotation.Order;
+import org.springframework.core.Ordered;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+
+//import org.hibernate.validator.*;
+import java.util.Set;
+
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.ValidationException;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
+
+import model.CSIRAuthors;
+import model.CSIRAuthorsPK;
+import model.ExtPubReqs;
+import model.ExtPubStatus;
+import model.ExternalAuthor;
+import model.LegalDocReqs;
+import model.MiscDocReqs;
+import model.RepTechReqs;
+import model.ReqFlagship;
+import model.ReqProject;
+import model.ReqRia;
+import model.Request;
+import model.ResearchData;
+import model.TODBRequest;
+import model.TheDisReqs;
+
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.Types;
+
+@Repository
+@Order(value = Ordered.HIGHEST_PRECEDENCE)
+public class RequestDAOImpl extends AbstractHibernateDAO<Request> {
+	public RequestDAOImpl() {
+		super();
+
+		setClazz(Request.class);
+	}
+
+	@Transactional(rollbackFor = RuntimeException.class, propagation = Propagation.REQUIRED)
+	public String createRequest(TODBRequest todbRequest) {
+		String pubNo = null;
+
+		validateTODBRequest(todbRequest);
+
+		Request request = todbRequest.getRequest();
+		ResearchData resData = todbRequest.getResearch();
+		LegalDocReqs legDocs = todbRequest.getLegal();
+		RepTechReqs repTech = todbRequest.getRepTech();
+		MiscDocReqs misDoc = todbRequest.getMisDoc();
+		TheDisReqs theDis = todbRequest.getTheDis();
+		ExtPubReqs extPub = todbRequest.getExtPub();
+		List<ExternalAuthor> extAuthors = todbRequest.getExtAuthors();
+		ExtPubStatus extPubStat = todbRequest.getExtPubStat();
+		List<ReqRia> reqRia = todbRequest.getRia();
+		List<ReqFlagship> reqFlag = todbRequest.getFlag();
+		List<ReqProject> reqProj = todbRequest.getProj();
+		List<CSIRAuthors> authors = todbRequest.getAuthors();
+
+		CSIRAuthorsPK cPk = null;
+
+		em.persist(request);
+		String requestNo = request.getRequestNo();
+
+		if (request.getResearchDataYn() == "Y") {
+			if (resData != null) {
+				resData.setRequestNo(requestNo);
+				em.persist(resData);
+			}
+		}
+
+		String[] sortedKeys = new String[] { "LEG", "REP", "MIS", "THE", "EXT" };
+		java.util.Arrays.sort(sortedKeys);
+
+		int keyIndex = Arrays
+				.binarySearch(sortedKeys, request.getDocTypeCode());
+
+		switch (keyIndex) {
+		case 1:
+			if (legDocs != null) {
+				legDocs.setRequestNo(requestNo);
+				em.persist(legDocs);
+			}
+			break;
+
+		case 3:
+			if (repTech != null) {
+				repTech.setRequestNo(requestNo);
+				em.persist(repTech);
+			}
+			break;
+
+		case 2:
+			if (misDoc != null) {
+				misDoc.setRequestNo(requestNo);
+				em.persist(misDoc);
+			}
+			break;
+
+		case 4:
+			if (theDis != null) {
+				theDis.setRequestNo(requestNo);
+				em.persist(theDis);
+			}
+			break;
+
+		case 0:
+			if (extPub != null) {
+				extPub.setRequestNo(requestNo);
+				em.persist(extPub);
+			}
+			if (extPubStat != null) {
+				extPubStat.setRequestNo(requestNo);
+				em.persist(extPubStat);
+			}
+			break;
+		}
+
+		if (extAuthors != null)
+			for (ExternalAuthor ea : extAuthors) {
+
+				ea.setRequestNo(requestNo);
+
+				em.persist(ea);
+			}
+		;
+		if (reqRia != null)
+			for (ReqRia ria : reqRia) {
+				ria.setRequestNo(requestNo);
+
+				em.persist(ria);
+			}
+		;
+		if (reqFlag != null)
+			for (ReqFlagship flag : reqFlag) {
+
+				flag.setRequestNo(requestNo);
+
+				em.persist(flag);
+			}
+		;
+		if (reqProj != null)
+			for (ReqProject proj : reqProj) {
+
+				proj.setRequestNo(requestNo);
+
+				em.persist(proj);
+			}
+		;
+		if (authors != null)
+			for (CSIRAuthors author : authors) {
+
+				cPk = author.getCsirAuthorsPK();
+				cPk.setRequestNo(requestNo);
+
+				em.persist(author);
+			}
+		;
+
+		em.flush();
+		pubNo = createPublicationNo(requestNo);
+		request.setTodbPublicationNo(pubNo);
+		em.persist(request);
+
+		startProcess(requestNo, request.getRequestorEmpNo());
+
+		return pubNo;
+
+	}
+	
+
+	private String createPublicationNo(String requestNo) {
+		CallableStatement callableStatement;
+		String result = null;
+
+		try {
+			Connection cc = ((SessionImpl) em.getDelegate()).connection();
+			callableStatement = cc
+					.prepareCall("{call wfd0026_utils.create_publication_number(?,?,?)}");
+
+			callableStatement.setString(1, "WFD0026A");// Parameter #1
+			callableStatement.setString(2, requestNo);// //Parameter #2
+			callableStatement.registerOutParameter(3, Types.VARCHAR); // Output
+																		// # 1
+			callableStatement.execute();
+
+			result = callableStatement.getString(3);
+			cc.close();
+		} catch (Exception e) {
+			String t = e.getMessage();
+		}
+		return result;
+	}
+
+	private String startProcess(String requestNo, String empNo) {
+		CallableStatement callableStatement;
+		String result = null;
+
+		try {
+			Connection cc = ((SessionImpl) em.getDelegate()).connection();
+			callableStatement = cc
+					.prepareCall("{call wfd0026a.start_process(?,?,?)}");
+
+			callableStatement.setString(1, "WFD0026A");// Parameter #1
+			callableStatement.setString(2, requestNo);// //Parameter #2
+			callableStatement.setString(3, empNo);// //Parameter #2
+
+			callableStatement.execute();
+
+			cc.close();
+		} catch (Exception e) {
+			String t = e.getMessage();
+		}
+		return result;
+	}
+
+	public enum DocTypeEnum {
+		LEG, REP, MIS, THE, EXT;
+	}
+
+	private void validateTODBRequest(TODBRequest todbRequest) {
+		Request req = todbRequest.getRequest();
+		ResearchData resData = null;
+		LegalDocReqs legal = null;
+		List<ExternalAuthor> extAuth = null;
+		RepTechReqs repTech = null;
+		MiscDocReqs misDoc = null;
+		TheDisReqs theDis = null;
+		ExtPubReqs extPub = null;
+
+		HibernateValidatorConfiguration configuration = Validation.byProvider(
+				HibernateValidator.class).configure();
+
+		// Default constraints
+		ConstraintMapping constraintMapping = configuration
+				.createConstraintMapping();
+
+		if (req.getTodbIndexingYn().equalsIgnoreCase("Y")) {
+			constraintMapping
+					.type(Request.class)
+					.property("csirTodbViewRightsYn", ElementType.FIELD)
+					.constraint(
+							new NotNullDef()
+									.message("Please indicate if view rights have been assigned to CSIR TOdB - select Yes or No."));
+
+			configuration.addMapping(constraintMapping);
+
+		}
+		if (req.getResearchDataYn().equalsIgnoreCase("Y")) {
+			resData = todbRequest.getResearch();
+
+			if (resData.getResearchDataLocation() == null
+					&& resData.getResearchDataUrl() == null) {
+				constraintMapping
+						.type(ResearchData.class)
+						.property("researchDataLocation", ElementType.FIELD)
+						.constraint(
+								new NotNullDef()
+										.message("You have indicated that Research Data is linked to this publication. Please provide either the Location or the URL."));
+				configuration.addMapping(constraintMapping);
+			}
+			if (resData.getSecurityClassification() == null) {
+				constraintMapping
+						.type(ResearchData.class)
+						.property("securityClassification", ElementType.FIELD)
+						.constraint(
+								new NotNullDef()
+										.message("You have indicated that Research Data is linked to this publication. Please select the Security Classification."));
+				configuration.addMapping(constraintMapping);
+			}
+			if (resData.getRetentionCode() == null) {
+				constraintMapping
+						.type(ResearchData.class)
+						.property("retentionCode", ElementType.FIELD)
+						.constraint(
+								new NotNullDef()
+										.message("You have indicated that Research Data is linked to this publication. Please select the Retention Period."));
+				configuration.addMapping(constraintMapping);
+			}
+			if (resData.getResponsibilityCode() == null) {
+				constraintMapping
+						.type(ResearchData.class)
+						.property("responsibilityCode", ElementType.FIELD)
+						.constraint(
+								new NotNullDef()
+										.message("You have indicated that Research Data is linked to this publication. Please select CSIRs responsibility i.t.o. data retention."));
+				configuration.addMapping(constraintMapping);
+			}
+		}
+		// Legal
+		if (req.getDocTypeCode().equalsIgnoreCase("LEG")) {
+			legal = todbRequest.getLegal();
+			extAuth = todbRequest.getExtAuthors();
+
+			if (legal.getPublicationType() == null) {
+				constraintMapping
+						.type(LegalDocReqs.class)
+						.property("publicationType", ElementType.FIELD)
+						.constraint(
+								new NotNullDef()
+										.message("Please select the Publication Type"));
+				configuration.addMapping(constraintMapping);
+			}
+			if (legal.getSecurityClassification() == null) {
+				constraintMapping
+						.type(LegalDocReqs.class)
+						.property("securityClassification", ElementType.FIELD)
+						.constraint(
+								new NotNullDef()
+										.message("Please select the Security Classification."));
+				configuration.addMapping(constraintMapping);
+			}
+			if (extAuth != null) {
+				for (ExternalAuthor ea : extAuth) {
+					if (ea.getAuthorAffiliation() == null) {
+						constraintMapping
+								.type(ExternalAuthor.class)
+								.property("authorAffiliation",
+										ElementType.FIELD)
+								.constraint(
+										new NotNullDef()
+												.message("Please enter the Company of External Signatory."));
+						configuration.addMapping(constraintMapping);
+					}
+				}
+			}
+			if (legal.getSignedDate() == null) {
+				constraintMapping
+						.type(LegalDocReqs.class)
+						.property("signedDate", ElementType.FIELD)
+						.constraint(
+								new NotNullDef()
+										.message("Please enter the Date Signed."));
+				configuration.addMapping(constraintMapping);
+			}
+			if (legal.getDocumentTitle() == null) {
+				constraintMapping
+						.type(LegalDocReqs.class)
+						.property("documentTitle", ElementType.FIELD)
+						.constraint(
+								new NotNullDef()
+										.message("Please enter the Title of the Document."));
+				configuration.addMapping(constraintMapping);
+			}
+		}
+		// Report
+		if (req.getDocTypeCode().equalsIgnoreCase("REP")) {
+			repTech = todbRequest.getRepTech();
+			extAuth = todbRequest.getExtAuthors();
+
+			if (repTech.getPublicationType() == null) {
+				constraintMapping
+						.type(RepTechReqs.class)
+						.property("publicationType", ElementType.FIELD)
+						.constraint(
+								new NotNullDef()
+										.message("Please select the Publication Type"));
+				configuration.addMapping(constraintMapping);
+			}
+			if (repTech.getSecurityClassification() == null) {
+				constraintMapping
+						.type(RepTechReqs.class)
+						.property("securityClassification", ElementType.FIELD)
+						.constraint(
+								new NotNullDef()
+										.message("Please select the Security Classification."));
+				configuration.addMapping(constraintMapping);
+			}
+			if (repTech.getDocumentTitle() == null) {
+				constraintMapping
+						.type(RepTechReqs.class)
+						.property("documentTitle", ElementType.FIELD)
+						.constraint(
+								new NotNullDef()
+										.message("Please enter the Title of the Document."));
+				configuration.addMapping(constraintMapping);
+			}
+			if (extAuth != null) {
+				for (ExternalAuthor ea : extAuth) {
+					if (ea.getAuthorAffiliation() == null) {
+						constraintMapping
+								.type(ExternalAuthor.class)
+								.property("authorAffiliation",
+										ElementType.FIELD)
+								.constraint(
+										new NotNullDef()
+												.message("Please enter the Company of External Signatory."));
+						configuration.addMapping(constraintMapping);
+					}
+				}
+			}
+			if (repTech.getPublicationType() == "SAF"
+					&& repTech.getSafetyDocNewVersionYn() == "Y"
+					&& repTech.getSafetyDocPublNo() == null) {
+				constraintMapping
+						.type(RepTechReqs.class)
+						.property("safetyDocPublNo", ElementType.FIELD)
+						.constraint(
+								new NotNullDef()
+										.message("Please enter the Publication No of the existing Safety Document."));
+				configuration.addMapping(constraintMapping);
+			}
+		}
+		// Miscellaneous
+		if (req.getDocTypeCode().equalsIgnoreCase("MIS")) {
+			misDoc = todbRequest.getMisDoc();
+			extAuth = todbRequest.getExtAuthors();
+
+			if (misDoc.getPublicationType() == null) {
+				constraintMapping
+						.type(MiscDocReqs.class)
+						.property("publicationType", ElementType.FIELD)
+						.constraint(
+								new NotNullDef()
+										.message("Please select the Publication Type"));
+				configuration.addMapping(constraintMapping);
+			}
+			if (misDoc.getSecurityClassification() == null) {
+				constraintMapping
+						.type(MiscDocReqs.class)
+						.property("securityClassification", ElementType.FIELD)
+						.constraint(
+								new NotNullDef()
+										.message("Please select the Security Classification."));
+				configuration.addMapping(constraintMapping);
+			}
+			if (misDoc.getYear() == null) {
+				constraintMapping
+						.type(MiscDocReqs.class)
+						.property("year", ElementType.FIELD)
+						.constraint(
+								new NotNullDef()
+										.message("Please enter the Year."));
+				configuration.addMapping(constraintMapping);
+			}
+			if (misDoc.getPublicationType().matches("COP|QUO")
+					&& misDoc.getClientName() == null) {
+				constraintMapping
+						.type(MiscDocReqs.class)
+						.property("clientName", ElementType.FIELD)
+						.constraint(
+								new NotNullDef()
+										.message("Please supply the Client Name."));
+				configuration.addMapping(constraintMapping);
+			}
+			if (misDoc.getDocumentTitle() == null) {
+				constraintMapping
+						.type(MiscDocReqs.class)
+						.property("documentTitle", ElementType.FIELD)
+						.constraint(
+								new NotNullDef()
+										.message("Please enter the Title of the Document."));
+				configuration.addMapping(constraintMapping);
+			}
+			if (misDoc.getPublicationType().equalsIgnoreCase("OSS")) {
+				if (misDoc.getSoftwareType() == null) {
+					constraintMapping
+							.type(MiscDocReqs.class)
+							.property("softwareType", ElementType.FIELD)
+							.constraint(
+									new NotNullDef()
+											.message("Please select the Software Type."));
+					configuration.addMapping(constraintMapping);
+				}
+				if (misDoc.getLicenceType() == null) {
+					constraintMapping
+							.type(MiscDocReqs.class)
+							.property("licenceType", ElementType.FIELD)
+							.constraint(
+									new NotNullDef()
+											.message("Please select the Licence Type."));
+					configuration.addMapping(constraintMapping);
+				}
+				if (misDoc.getHostSite() == null) {
+					constraintMapping
+							.type(MiscDocReqs.class)
+							.property("hostSite", ElementType.FIELD)
+							.constraint(
+									new NotNullDef()
+											.message("Please supply the Host Site."));
+					configuration.addMapping(constraintMapping);
+				}
+				if (misDoc.getVersionNo() == null) {
+					constraintMapping
+							.type(MiscDocReqs.class)
+							.property("versionNo", ElementType.FIELD)
+							.constraint(
+									new NotNullDef()
+											.message("Please supply the Version Number."));
+					configuration.addMapping(constraintMapping);
+				}
+				if (misDoc.getDownloadLink() == null) {
+					constraintMapping
+							.type(MiscDocReqs.class)
+							.property("downloadLink", ElementType.FIELD)
+							.constraint(
+									new NotNullDef()
+											.message("Please supply the Download Link."));
+					configuration.addMapping(constraintMapping);
+				}
+
+			}
+
+			// The
+			if (req.getDocTypeCode().equalsIgnoreCase("THE")) {
+				theDis = todbRequest.getTheDis();
+
+				if (theDis.getPublicationType() == null) {
+					constraintMapping
+							.type(TheDisReqs.class)
+							.property("publicationType", ElementType.FIELD)
+							.constraint(
+									new NotNullDef()
+											.message("Please select the Publication Type"));
+					configuration.addMapping(constraintMapping);
+				}
+				if (theDis.getSecurityClassification() == null) {
+					constraintMapping
+							.type(TheDisReqs.class)
+							.property("securityClassification",
+									ElementType.FIELD)
+							.constraint(
+									new NotNullDef()
+											.message("Please select the Security Classification."));
+					configuration.addMapping(constraintMapping);
+				}
+				if (theDis.getYear() == null) {
+					constraintMapping
+							.type(TheDisReqs.class)
+							.property("year", ElementType.FIELD)
+							.constraint(
+									new NotNullDef()
+											.message("Please enter the Year."));
+					configuration.addMapping(constraintMapping);
+				}
+				if (theDis.getPublicationType().matches("OTH")
+						&& theDis.getPublTypeOther() == null) {
+					constraintMapping
+							.type(TheDisReqs.class)
+							.property("publTypeOther", ElementType.FIELD)
+							.constraint(
+									new NotNullDef()
+											.message("You've selected OTHER as the Publication Type, please specify."));
+					configuration.addMapping(constraintMapping);
+				}
+				if (theDis.getDocumentTitle() == null) {
+					constraintMapping
+							.type(TheDisReqs.class)
+							.property("documentTitle", ElementType.FIELD)
+							.constraint(
+									new NotNullDef()
+											.message("Please enter the Title of the Thesis/Dissertation."));
+					configuration.addMapping(constraintMapping);
+				}
+			}
+
+			// Ext
+			if (req.getDocTypeCode().equalsIgnoreCase("EXT")) {
+
+				extPub = todbRequest.getExtPub();
+
+				if (extPub.getPublicationType() == null) {
+					constraintMapping
+							.type(ExtPubReqs.class)
+							.property("publicationType", ElementType.FIELD)
+							.constraint(
+									new NotNullDef()
+											.message("Please select the Publication Type"));
+					configuration.addMapping(constraintMapping);
+				}
+				if (extAuth != null) {
+					for (ExternalAuthor ea : extAuth) {
+						if (ea.getAuthorAffiliation() == null) {
+							constraintMapping
+									.type(ExternalAuthor.class)
+									.property("authorAffiliation",
+											ElementType.FIELD)
+									.constraint(
+											new NotNullDef()
+													.message("Please enter the Affiliation of Authors."));
+							configuration.addMapping(constraintMapping);
+						}
+					}
+				}
+				if (extPub.getPublicationType().matches("BOO|CPO")
+						&& extPub.getPublicationTitle() == null) {
+					constraintMapping
+							.type(ExtPubReqs.class)
+							.property("publicationTitle", ElementType.FIELD)
+							.constraint(
+									new NotNullDef()
+											.message("Please enter the Title of the Publication."));
+					configuration.addMapping(constraintMapping);
+				}
+				if (extPub.getDocumentTitle() == null) {
+					constraintMapping
+							.type(ExtPubReqs.class)
+							.property("documentTitle", ElementType.FIELD)
+							.constraint(
+									new NotNullDef()
+											.message("Please enter the Title of the Document."));
+					configuration.addMapping(constraintMapping);
+				}
+				if (extPub.getYear() == null) {
+					constraintMapping
+							.type(ExtPubReqs.class)
+							.property("year", ElementType.FIELD)
+							.constraint(
+									new NotNullDef()
+											.message("Please enter the Year."));
+					configuration.addMapping(constraintMapping);
+				}
+				if (extPub.getDocumentStatus() == null) {
+					constraintMapping
+							.type(ExtPubReqs.class)
+							.property("documentStatus", ElementType.FIELD)
+							.constraint(
+									new NotNullDef()
+											.message("Please select a Document Status."));
+					configuration.addMapping(constraintMapping);
+				}
+				if (extPub.getIpApprovedYn() == null) {
+					constraintMapping
+							.type(ExtPubReqs.class)
+							.property("ipApprovedYn", ElementType.FIELD)
+							.constraint(
+									new NotNullDef()
+											.message("Please specify the request to screen for IP Details."));
+					configuration.addMapping(constraintMapping);
+				}
+				if (extPub.getIpApprovedYn() == "Y") {
+					constraintMapping
+							.type(ExtPubReqs.class)
+							.property("ipRequestNo", ElementType.FIELD)
+							.constraint(
+									new NotNullDef()
+											.message("Please add the request to screen for IP number."));
+					configuration.addMapping(constraintMapping);
+				}
+			}
+		}
+
+		Validator validator = configuration.addMapping(constraintMapping)
+				.buildValidatorFactory().unwrap( HibernateValidatorFactory.class )
+	            .usingContext()
+	            .failFast( true )
+	            .getValidator();
+
+
+		Set<ConstraintViolation<TODBRequest>> constraintViolations = validator
+				.validate(todbRequest);
+
+		if (!constraintViolations.isEmpty()) {
+			throw new ValidationException(constraintViolations.iterator()
+					.next().getMessage());
+		}
+
+	}
+}

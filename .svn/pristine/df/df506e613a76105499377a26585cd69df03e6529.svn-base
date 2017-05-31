@@ -1,0 +1,544 @@
+package model;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import javax.persistence.Basic;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.NamedNativeQueries;
+import javax.persistence.NamedNativeQuery;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import javax.validation.constraints.NotNull;
+import javax.xml.bind.annotation.XmlRootElement;
+
+import org.hibernate.annotations.GenericGenerator;
+/**
+ * Entity bean with JPA annotations Hibernate provides JPA implementation
+ * 
+ * @author Ryan Dekker
+ *
+ */
+@NamedNativeQueries({
+	@NamedNativeQuery(
+	name = "getIPRequestNo",
+	query = "select req.* "
+         + "from wfd0031_ipep_requests req "
+         + "where " 
+         + "req.author_no = "
+         + "("
+         + "CASE :proxy "
+         + "WHEN 'Y' THEN "
+         + "   :proxy_emp_no"
+         + " ELSE " 
+         + "  :requestor_emp_no "
+         + "END "
+         + ") "
+         + "AND status_ind = 'FINAL_APPROVED' "
+         + "ORDER BY req.request_no",
+        resultClass = IpepRequest.class
+	)
+})
+
+@Entity
+@Table(name = "WFD0026_TODB_REQUESTS")
+@XmlRootElement
+public class Request implements Serializable {
+	private static final long serialVersionUID = 1L;
+	@Id
+	@GenericGenerator(name = "sequence", strategy = "model.StringSequenceGenerator", parameters = {
+			@org.hibernate.annotations.Parameter(name = "sequence", value = "WFD0026_TODB_SEQ"),
+			@org.hibernate.annotations.Parameter(name = "allocationSize", value = "1"),
+			@org.hibernate.annotations.Parameter(name = "initialValue", value = "1") })
+	@GeneratedValue(generator = "sequence", strategy = GenerationType.AUTO)
+	@Basic(optional = false)
+	@Column(name = "REQUEST_NO")
+	private String requestNo;
+	@Column(name = "REQUEST_DATE_TIME")
+	@Temporal(TemporalType.TIMESTAMP)
+	private Date requestDateTime;
+	@Column(name = "REQUESTOR_EMP_NO")
+	private String requestorEmpNo;
+	@Column(name = "REQUESTOR_NAME")
+	@NotNull(message="Requestor name is required")
+	private String requestorName;
+	@Column(name = "EMP_NO")
+	private String empNo;
+	@Column(name = "PROXY_EMP_NO")
+	private String proxyEmpNo;
+	@Column(name = "DOCUMENT_TYPE_CODE")
+	@NotNull(message="Please select a Document Type, and enter the required permalink details")
+	private String docTypeCode;
+	@Column(name = "STATUS_IND")
+	private String statusInd;
+	@Column(name = "GW_LIBRARY")
+	private String gwLibrary;
+	@Column(name = "GW_DOC_NO")
+	private String gwDocNo;
+	@Column(name = "CSIR_TODB_VIEW_RIGHTS_YN")
+	private String csirTodbViewRightsYn;
+	@Column(name = "TODB_INDEXING_YN")
+	@NotNull(message="Please indicate whether this document is ready for TOdB Indexing - select 'Yes' or 'No'.")
+	private String todbIndexingYn;
+	@Column(name = "TODB_EMP_NO")
+	private String todbEmpNo;
+	@Column(name = "TODB_DATE")
+	@Temporal(TemporalType.TIMESTAMP)
+	private Date todbDate;
+	@Column(name = "TODB_STORE_DMS_DOC_YN")
+	private String todbStoreDmsDocYn;
+	@Column(name = "TODB_ADD_DMS_NO_YN")
+	private String todbAddDmsNoYn;
+	@Column(name = "TODB_ASSIGN_VIEW_RIGHTS_YN")
+	@NotNull(message="Please indicate if view rights have been assigned to CSIR TOdB - select 'Yes' or 'No'.")
+	private String todbAssignViewRightsYn;
+	@Column(name = "TODB_LIBRARY_NO")
+	private String todbLibraryNo;
+	@Column(name = "TODB_RECORD_NO")
+	private String todbRecordNo;
+	@Column(name = "ACCEPT_INDEXING_EMP_NO")
+	private String acceptIndexingEmpNo;
+	@Column(name = "ACCEPT_INDEXING_DATE")
+	@Temporal(TemporalType.TIMESTAMP)
+	private Date acceptIndexingDate;
+	@Column(name = "ACCEPT_INDEXING_YN")
+	private String acceptIndexingYn;
+	@Column(name = "NOTES")
+	private String notes;
+	@Column(name = "INSERT_USER")
+	private String insertUser;
+	@Column(name = "INSERT_DATE")
+	@Temporal(TemporalType.TIMESTAMP)
+	private Date insertDate;
+	@Column(name = "INSERT_PGM_NAME")
+	private String insertPgmName;
+	@Column(name = "UPDATE_USER")
+	private String updateUser;
+	@Column(name = "UPDATE_DATE")
+	@Temporal(TemporalType.TIMESTAMP)
+	private Date updateDate;
+	@Column(name = "UPDATE_PGM_NAME")
+	private String updatePgmName;
+	@Column(name = "TODB_PUBLICATION_NO")
+	private String todbPublicationNo;
+	@Column(name = "RESEARCH_SPACE_PUBL_YN")
+	private String researchSpacePublYn;
+	@Column(name = "APPROVE_RS_PUBL_YN")
+	private String approveRsPublYn;
+	@Column(name = "COPYRIGHT_CLEARANCE_YN")
+	private String copyrightClearanceYn;
+	@Column(name = "RS_PDF_DOC")
+	private String rsPdfDoc;
+	@Column(name = "RESEARCH_SPACE_URI")
+	private String researchSpaceUri;
+	@Column(name = "SECURITY_CLASSIFICATION")
+	private String securityClassification;
+	@Column(name = "RS_EMP_NO")
+	private String rsEmpNo;
+	@Column(name = "RS_DATE")
+	@Temporal(TemporalType.TIMESTAMP)
+	private Date rsDate;
+	@Column(name = "COMPETENCE_AREA")
+	@NotNull(message="Please select the Competence Area.")
+	private String competenceArea;
+	@Column(name = "TODB_RECORD_URL")
+	private String todbRecordUrl;
+	@Column(name = "RESEARCH_DATA_YN")
+	private String researchDataYn;
+	@Column(name = "PEER_GW_LIBRARY")
+	private String peerGwLibrary;
+	@Column(name = "PEER_GW_DOC_NO")
+	private String peerGwDocNo;
+	@Column(name = "FUNDING_CODE")
+	private String fundingCode;
+	@Column(name = "RIA_CODE")
+	private String riaCode;
+	@Column(name = "PERMALINK")
+	private String permaLink;
+	@Column(name = "VIBE_DOC_ID")
+	private String vibeDocId;	
+
+	public Request() {
+	}
+
+	public String getRequestNo() {
+		return requestNo;
+	}
+
+	public void setRequestNo(String requestNo) {
+		this.requestNo = requestNo;
+	}
+
+	public Date getRequestDateTime() {
+		return requestDateTime;
+	}
+
+	public void setRequestDateTime(Date requestDateTime) {
+		this.requestDateTime = requestDateTime;
+	}
+
+	public String getRequestorEmpNo() {
+		return requestorEmpNo;
+	}
+
+	public void setRequestorEmpNo(String requestorEmpNo) {
+		this.requestorEmpNo = requestorEmpNo;
+	}
+
+	public String getRequestorName() {
+		return requestorName;
+	}
+
+	public void setRequestorName(String requestorName) {
+		this.requestorName = requestorName;
+	}
+
+	public String getEmpNo() {
+		return empNo;
+	}
+
+	public void setEmpNo(String empNo) {
+		this.empNo = empNo;
+	}
+
+	public String getProxyEmpNo() {
+		return proxyEmpNo;
+	}
+
+	public void setProxyEmpNo(String proxyEmpNo) {
+		this.proxyEmpNo = proxyEmpNo;
+	}
+
+	public String getDocTypeCode() {
+		return docTypeCode;
+	}
+
+	public void setDocTypeCode(String docTypeCode) {
+		this.docTypeCode = docTypeCode;
+	}
+
+	public String getStatusInd() {
+		return statusInd;
+	}
+
+	public void setStatusInd(String statusInd) {
+		this.statusInd = statusInd;
+	}
+
+	public String getGwLibrary() {
+		return gwLibrary;
+	}
+
+	public void setGwLibrary(String gwLibrary) {
+		this.gwLibrary = gwLibrary;
+	}
+
+	public String getGwDocNo() {
+		return gwDocNo;
+	}
+
+	public void setGwDocNo(String gwDocNo) {
+		this.gwDocNo = gwDocNo;
+	}
+
+	public String getCsirTodbViewRightsYn() {
+		return csirTodbViewRightsYn;
+	}
+
+	public void setCsirTodbViewRightsYn(String csirTodbViewRightsYn) {
+		this.csirTodbViewRightsYn = csirTodbViewRightsYn;
+	}
+
+	public String getTodbIndexingYn() {
+		return todbIndexingYn;
+	}
+
+	public void setTodbIndexingYn(String todbIndexingYn) {
+		this.todbIndexingYn = todbIndexingYn;
+	}
+
+	public String getTodbEmpNo() {
+		return todbEmpNo;
+	}
+
+	public void setTodbEmpNo(String todbEmpNo) {
+		this.todbEmpNo = todbEmpNo;
+	}
+
+	public Date getTodbDate() {
+		return todbDate;
+	}
+
+	public void setTodbDate(Date todbDate) {
+		this.todbDate = todbDate;
+	}
+
+	public String getTodbStoreDmsDocYn() {
+		return todbStoreDmsDocYn;
+	}
+
+	public void setTodbStoreDmsDocYn(String todbStoreDmsDocYn) {
+		this.todbStoreDmsDocYn = todbStoreDmsDocYn;
+	}
+
+	public String getTodbAddDmsNoYn() {
+		return todbAddDmsNoYn;
+	}
+
+	public void setTodbAddDmsNoYn(String todbAddDmsNoYn) {
+		this.todbAddDmsNoYn = todbAddDmsNoYn;
+	}
+
+	public String getTodbAssignViewRightsYn() {
+		return todbAssignViewRightsYn;
+	}
+
+	public void setTodbAssignViewRightsYn(String todbAssignViewRightsYn) {
+		this.todbAssignViewRightsYn = todbAssignViewRightsYn;
+	}
+
+	public String getTodbLibraryNo() {
+		return todbLibraryNo;
+	}
+
+	public void setTodbLibraryNo(String todbLibraryNo) {
+		this.todbLibraryNo = todbLibraryNo;
+	}
+
+	public String getTodbRecordNo() {
+		return todbRecordNo;
+	}
+
+	public void setTodbRecordNo(String todbRecordNo) {
+		this.todbRecordNo = todbRecordNo;
+	}
+
+	public String getAcceptIndexingEmpNo() {
+		return acceptIndexingEmpNo;
+	}
+
+	public void setAcceptIndexingEmpNo(String acceptIndexingEmpNo) {
+		this.acceptIndexingEmpNo = acceptIndexingEmpNo;
+	}
+
+	public Date getAcceptIndexingDate() {
+		return acceptIndexingDate;
+	}
+
+	public void setAcceptIndexingDate(Date acceptIndexingDate) {
+		this.acceptIndexingDate = acceptIndexingDate;
+	}
+
+	public String getAcceptIndexingYn() {
+		return acceptIndexingYn;
+	}
+
+	public void setAcceptIndexingYn(String acceptIndexingYn) {
+		this.acceptIndexingYn = acceptIndexingYn;
+	}
+
+	public String getNotes() {
+		return notes;
+	}
+
+	public void setNotes(String notes) {
+		this.notes = notes;
+	}
+
+	public String getInsertUser() {
+		return insertUser;
+	}
+
+	public void setInsertUser(String insertUser) {
+		this.insertUser = insertUser;
+	}
+
+	public Date getInsertDate() {
+		return insertDate;
+	}
+
+	public void setInsertDate(Date insertDate) {
+		this.insertDate = insertDate;
+	}
+
+	public String getInsertPgmName() {
+		return insertPgmName;
+	}
+
+	public void setInsertPgmName(String insertPgmName) {
+		this.insertPgmName = insertPgmName;
+	}
+
+	public String getUpdateUser() {
+		return updateUser;
+	}
+
+	public void setUpdateUser(String updateUser) {
+		this.updateUser = updateUser;
+	}
+
+	public Date getUpdateDate() {
+		return updateDate;
+	}
+
+	public void setUpdateDate(Date updateDate) {
+		this.updateDate = updateDate;
+	}
+
+	public String getUpdatePgmName() {
+		return updatePgmName;
+	}
+
+	public void setUpdatePgmName(String updatePgmName) {
+		this.updatePgmName = updatePgmName;
+	}
+
+	public String getTodbPublicationNo() {
+		return todbPublicationNo;
+	}
+
+	public void setTodbPublicationNo(String todbPublicationNo) {
+		this.todbPublicationNo = todbPublicationNo;
+	}
+
+	public String getResearchSpacePublYn() {
+		return researchSpacePublYn;
+	}
+
+	public void setResearchSpacePublYn(String researchSpacePublYn) {
+		this.researchSpacePublYn = researchSpacePublYn;
+	}
+
+	public String getApproveRsPublYn() {
+		return approveRsPublYn;
+	}
+
+	public void setApproveRsPublYn(String approveRsPublYn) {
+		this.approveRsPublYn = approveRsPublYn;
+	}
+
+	public String getCopyrightClearanceYn() {
+		return copyrightClearanceYn;
+	}
+
+	public void setCopyrightClearanceYn(String copyrightClearanceYn) {
+		this.copyrightClearanceYn = copyrightClearanceYn;
+	}
+
+	public String getRsPdfDoc() {
+		return rsPdfDoc;
+	}
+
+	public void setRsPdfDoc(String rsPdfDoc) {
+		this.rsPdfDoc = rsPdfDoc;
+	}
+
+	public String getResearchSpaceUri() {
+		return researchSpaceUri;
+	}
+
+	public void setResearchSpaceUri(String researchSpaceUri) {
+		this.researchSpaceUri = researchSpaceUri;
+	}
+
+	public String getSecurityClassification() {
+		return securityClassification;
+	}
+
+	public void setSecurityClassification(String securityClassification) {
+		this.securityClassification = securityClassification;
+	}
+
+	public String getRsEmpNo() {
+		return rsEmpNo;
+	}
+
+	public void setRsEmpNo(String rsEmpNo) {
+		this.rsEmpNo = rsEmpNo;
+	}
+
+	public Date getRsDate() {
+		return rsDate;
+	}
+
+	public void setRsDate(Date rsDate) {
+		this.rsDate = rsDate;
+	}
+
+	public String getCompetenceArea() {
+		return competenceArea;
+	}
+
+	public void setCompetenceArea(String competenceArea) {
+		this.competenceArea = competenceArea;
+	}
+
+	public String getTodbRecordUrl() {
+		return todbRecordUrl;
+	}
+
+	public void setTodbRecordUrl(String todbRecordUrl) {
+		this.todbRecordUrl = todbRecordUrl;
+	}
+
+	public String getResearchDataYn() {
+		return researchDataYn;
+	}
+
+	public void setResearchDataYn(String researchDataYn) {
+		this.researchDataYn = researchDataYn;
+	}
+
+	public String getPeerGwLibrary() {
+		return peerGwLibrary;
+	}
+
+	public void setPeerGwLibrary(String peerGwLibrary) {
+		this.peerGwLibrary = peerGwLibrary;
+	}
+
+	public String getPeerGwDocNo() {
+		return peerGwDocNo;
+	}
+
+	public void setPeerGwDocNo(String peerGwDocNo) {
+		this.peerGwDocNo = peerGwDocNo;
+	}
+
+	public String getFundingCode() {
+		return fundingCode;
+	}
+
+	public void setFundingCode(String fundingCode) {
+		this.fundingCode = fundingCode;
+	}
+
+	public String getRiaCode() {
+		return riaCode;
+	}
+
+	public void setRiaCode(String riaCode) {
+		this.riaCode = riaCode;
+	}
+
+	public String getPermaLink() {
+		return permaLink;
+	}
+
+	public void setPermaLink(String permaLink) {
+		this.permaLink = permaLink;
+	}
+	
+	public String getVibeDocId() {
+		return vibeDocId;
+	}
+
+	public void setVibeDocId(String vibeDocId) {
+		this.vibeDocId = vibeDocId;
+	}
+}

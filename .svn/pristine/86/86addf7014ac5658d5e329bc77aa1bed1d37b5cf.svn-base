@@ -1,0 +1,13 @@
+package dao;
+
+import org.springframework.stereotype.Repository;
+
+import model.EntityIdent;
+
+@Repository
+public class EntityIdentDAOImpl extends AbstractHibernateDAO<EntityIdent> {
+	public EntityIdentDAOImpl() {
+		setClazz(EntityIdent.class);
+	}
+
+}

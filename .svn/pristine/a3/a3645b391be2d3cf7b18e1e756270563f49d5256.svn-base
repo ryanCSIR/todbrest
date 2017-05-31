@@ -1,0 +1,20 @@
+package dao;
+
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
+import model.EntityIdent;
+import model.ProjectId;
+
+@Repository
+public class ProjectIdDAOImpl extends AbstractHibernateDAO<ProjectId> {
+
+	public ProjectIdDAOImpl() {
+		setClazz(ProjectId.class);
+	}
+
+	public List<ProjectId> getProjectNo() {
+		return em.createNamedQuery("getProjectNo").getResultList();
+	}
+}

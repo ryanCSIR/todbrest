@@ -1,0 +1,568 @@
+package rest;
+
+import java.util.List;
+
+import javax.validation.ValidationException;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.GenericEntity;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.UriInfo;
+
+import model.BusinessUnits;
+import model.CompAreas;
+import model.Departments;
+import model.DocumentType;
+import model.EntityIdent;
+import model.ErrorResponse;
+import model.Flagship;
+import model.GwLibrary;
+import model.IpepRequest;
+import model.OssLicence;
+import model.OssType;
+import model.ProjectId;
+import model.PublicationType;
+import model.RegisteredProxy;
+import model.ReportTypes;
+import model.Request;
+import model.Responsibility;
+import model.RetentionPeriod;
+import model.Ria;
+import model.SecurityClass;
+import model.TODBRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.annotation.Secured;
+import org.springframework.stereotype.Component;
+
+import dao.AuthorsDAOImpl;
+import dao.BusinessUnitsDAOImpl;
+import dao.CompAreasDAOImpl;
+import dao.DepartmentsDAOImpl;
+import dao.DocumentTypeDAOImpl;
+import dao.EntityIdentDAOImpl;
+import dao.FlagshipDAOImpl;
+import dao.GwLibraryDAOImpl;
+import dao.OssLicenseDAOImpl;
+import dao.OssTypeDAOImpl;
+import dao.ProjectIdDAOImpl;
+import dao.PublNoBreakdownDAOImpl;
+import dao.PublicationTypeDAOImpl;
+import dao.RegisteredProxyDAOImpl;
+import dao.ReportTypesDAOImpl;
+import dao.RequestDAOImpl;
+import dao.ResponsibilityDAOImpl;
+import dao.RetentionPeriodDAOImpl;
+import dao.RiaDAOImpl;
+import dao.SecurityClassDAOImpl;
+
+@Path("/todb")
+@Component
+@Produces({ MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
+public class Resource {
+	@Autowired
+	private BusinessUnitsDAOImpl buDAO;
+	@Autowired
+	private CompAreasDAOImpl caDAO;
+	@Autowired
+	private AuthorsDAOImpl auDAO;
+	@Autowired
+	private DepartmentsDAOImpl depDAO;
+	@Autowired
+	private DocumentTypeDAOImpl dtDAO;
+	@Autowired
+	private EntityIdentDAOImpl eiDAO;
+	@Autowired
+	private FlagshipDAOImpl fsDAO;
+	@Autowired
+	private GwLibraryDAOImpl gwDAO;
+	@Autowired
+	private OssLicenseDAOImpl ossLDAO;
+	@Autowired
+	private OssTypeDAOImpl ossTDAO;
+	@Autowired
+	private ProjectIdDAOImpl piDAO;
+	@Autowired
+	private PublicationTypeDAOImpl ptDAO;
+	@Autowired
+	private RegisteredProxyDAOImpl rpDAO;
+	@Autowired
+	private ReportTypesDAOImpl rtDAO;
+	@Autowired
+	private ResponsibilityDAOImpl rsDAO;
+	@Autowired
+	private RetentionPeriodDAOImpl rpeDAO;
+	@Autowired
+	private RiaDAOImpl riDAO;
+	@Autowired
+	private SecurityClassDAOImpl scDAO;
+	@Autowired
+	private RequestDAOImpl reqDAO;
+	@Autowired
+	private PublNoBreakdownDAOImpl pubDAO;
+
+	@Context
+	UriInfo uriInfo;
+
+	@Path("/createrequest")
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response createRequest(TODBRequest todbRequest) throws Exception {
+		String pubNo = null;
+		Request req = todbRequest.getRequest();
+				
+		try {
+			pubNo = reqDAO.createRequest(todbRequest);
+		}
+		catch (ValidationException e) {
+			return ValidationResponse(e);
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(200).entity(req).build();
+	}
+
+	@GET
+	@Path("/businessunits/{bu_id}")
+	@SuppressWarnings("rawtypes")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response findBusinessUnits(@PathParam("bu_id") String id) throws Exception {
+		List<BusinessUnits> bu = null;
+		GenericEntity generic = null;
+
+		try {
+			bu = buDAO.findByCriteria("buId", id);
+			generic = new GenericEntity<List<BusinessUnits>>(bu) {
+			};
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(200).entity(generic).build();
+	}
+	
+	@GET
+	@Path("/ipeprequests/{proxy}/{proxy_emp_no}/{requestor_emp_no}")
+	@SuppressWarnings("rawtypes")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response findIPRequests(@PathParam("proxy") String proxy, @PathParam("proxy_emp_no") String proxy_emp_no, @PathParam("requestor_emp_no") String requestor_emp_no) throws Exception {
+		List<IpepRequest> req = null;
+		GenericEntity generic = null;
+
+		try {
+			req = reqDAO.getIPRequestNo(proxy, proxy_emp_no, requestor_emp_no);
+			generic = new GenericEntity<List<IpepRequest>>(req) {
+			};
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(200).entity(generic).build();
+	}
+	
+
+	@GET
+	@Path("/departments/{bu_id}")
+	@SuppressWarnings("rawtypes")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response findDepartments(@PathParam("bu_id") String id)
+			throws Exception {
+		List<Departments> dep = null;
+		GenericEntity generic = null;
+
+		try {
+			dep = depDAO.findByCriteria("buId", id);
+			generic = new GenericEntity<List<Departments>>(dep) {
+			};
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(Response.Status.OK).entity(generic).build();
+	}
+
+	@GET
+	@Path("/employees/{lan_userid}")
+	@SuppressWarnings("rawtypes")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response findEmployee(@PathParam("lan_userid") String no)
+			throws Exception {
+		List<EntityIdent> ent = null;
+		GenericEntity generic = null;
+
+		try {
+			ent = eiDAO.findByCriteria("lanUserid", no);
+			generic = new GenericEntity<List<EntityIdent>>(ent) {
+			};
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(Response.Status.OK).entity(generic).build();
+	}
+	
+	@GET
+	@Path("/employees")
+	@SuppressWarnings("rawtypes")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response findEmployees()
+			throws Exception {
+		List<EntityIdent> ent = null;
+		GenericEntity generic = null;
+
+		try {
+			ent = eiDAO.getEmployees();
+			generic = new GenericEntity<List<EntityIdent>>(ent) {
+			};
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(Response.Status.OK).entity(generic).build();
+	}
+	
+
+	@GET
+	@Path("/competencyareas/{bu_id}")
+	@SuppressWarnings("rawtypes")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response findCompetenceAreasByBU(@PathParam("bu_id") String id) throws Exception {
+		List<CompAreas> com = null;
+		GenericEntity generic = null;
+
+		try {
+			com = caDAO.findByCriteria("buId", id);
+			generic = new GenericEntity<List<CompAreas>>(com) {
+			};
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(Response.Status.OK).entity(generic).build();
+	}
+	
+	@GET
+	@Path("/competencyareas")
+	@SuppressWarnings("rawtypes")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response findCompetenceAreas() throws Exception {
+		List<CompAreas> com = null;
+		GenericEntity generic = null;
+
+		try {
+			com = caDAO.findAll();
+			generic = new GenericEntity<List<CompAreas>>(com) {
+			};
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(Response.Status.OK).entity(generic).build();
+	}
+	
+
+	@GET
+	@Path("/documenttypes")
+	@SuppressWarnings("rawtypes")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response findDocumentTypes() throws Exception {
+		List<DocumentType> doc = null;
+		GenericEntity generic = null;
+
+		try {
+			doc = dtDAO.findAll();
+			generic = new GenericEntity<List<DocumentType>>(doc) {
+			};
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(Response.Status.OK).entity(generic).build();
+	}
+
+	@GET
+	@Path("/flagships")
+	@SuppressWarnings("rawtypes")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response findFlagShips() throws Exception {
+		List<Flagship> fla = null;
+		GenericEntity generic = null;
+
+		try {
+			fla = fsDAO.findAll();
+			generic = new GenericEntity<List<Flagship>>(fla) {
+			};
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(Response.Status.OK).entity(generic).build();
+	}
+
+	@GET
+	@Path("/gwlibraries")
+	@SuppressWarnings("rawtypes")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response findGWLibraries() throws Exception {
+		List<GwLibrary> gwl = null;
+		GenericEntity generic = null;
+
+		try {
+			gwl = gwDAO.findAll();
+			generic = new GenericEntity<List<GwLibrary>>(gwl) {
+			};
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(Response.Status.OK).entity(generic).build();
+	}
+
+	@GET
+	@Path("/osslicenses")
+	@SuppressWarnings("rawtypes")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response findOSSLicenses() throws Exception {
+		List<OssLicence> oss = null;
+		GenericEntity generic = null;
+
+		try {
+			oss = ossLDAO.findAll();
+			generic = new GenericEntity<List<OssLicence>>(oss) {
+			};
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(Response.Status.OK).entity(generic).build();
+	}
+
+	@GET
+	@Path("/osstype")
+	@SuppressWarnings("rawtypes")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response findOSSType() throws Exception {
+		List<OssType> oss = null;
+		GenericEntity generic = null;
+
+		try {
+			oss = ossTDAO.findAll();
+			generic = new GenericEntity<List<OssType>>(oss) {
+			};
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(Response.Status.OK).entity(generic).build();
+	}
+	
+	@GET
+	@Path("/projectids")
+	@SuppressWarnings("rawtypes")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response findProjectIds() throws Exception {
+		List<ProjectId> pi = null;
+		GenericEntity generic = null;
+
+		try {
+			pi = piDAO.getProjectNo();
+			generic = new GenericEntity<List<ProjectId>>(pi) {
+			};
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(Response.Status.OK).entity(generic).build();
+	}
+	
+
+	@GET
+	@Path("/publicationtype")
+	@SuppressWarnings("rawtypes")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response findPublicationType() throws Exception {
+		List<PublicationType> pub = null;
+		GenericEntity generic = null;
+
+		try {
+			pub = ptDAO.findAll();
+			generic = new GenericEntity<List<PublicationType>>(pub) {
+			};
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(Response.Status.OK).entity(generic).build();
+	}
+
+	@GET
+	@Path("/registeredproxy")
+	@SuppressWarnings("rawtypes")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response findRegisteredProxies() throws Exception {
+		List<RegisteredProxy> reg = null;
+		GenericEntity generic = null;
+
+		try {
+			reg = rpDAO.findAll();
+			generic = new GenericEntity<List<RegisteredProxy>>(reg) {
+			};
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(Response.Status.OK).entity(generic).build();
+	}
+
+	@GET
+	@Path("/reporttypes")
+	@SuppressWarnings("rawtypes")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response findReportTypes() throws Exception {
+		List<ReportTypes> rep = null;
+		GenericEntity generic = null;
+
+		try {
+			rep = rtDAO.findAll();
+			generic = new GenericEntity<List<ReportTypes>>(rep) {
+			};
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(Response.Status.OK).entity(generic).build();
+	}
+
+	@GET
+	@Path("/responsibilities")
+	@SuppressWarnings("rawtypes")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response findResponsibilities() throws Exception {
+		List<Responsibility> res = null;
+		GenericEntity generic = null;
+
+		try {
+			res = rsDAO.findAll();
+			generic = new GenericEntity<List<Responsibility>>(res) {
+			};
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(Response.Status.OK).entity(generic).build();
+	}
+
+	@GET
+	@Path("/retentionperiod")
+	@SuppressWarnings("rawtypes")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response findRetentionPeriod() throws Exception {
+		List<RetentionPeriod> ret = null;
+		GenericEntity generic = null;
+
+		try {
+			ret = rpeDAO.findAll();
+			generic = new GenericEntity<List<RetentionPeriod>>(ret) {
+			};
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(Response.Status.OK).entity(generic).build();
+	}
+
+	@GET
+	@Path("/ria")
+	@SuppressWarnings("rawtypes")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response findRia() throws Exception {
+		List<Ria> ria = null;
+		GenericEntity generic = null;
+
+		try {
+			ria = riDAO.findAll();
+			generic = new GenericEntity<List<Ria>>(ria) {
+			};
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(Response.Status.OK).entity(generic).build();
+	}
+
+	@GET
+	@Path("/securityclass")
+	@SuppressWarnings("rawtypes")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Secured("ROLE_ADMIN")
+	public Response findSecurityClass() throws Exception {
+		List<SecurityClass> sec = null;
+		GenericEntity generic = null;
+
+		try {
+			sec = scDAO.findAll();
+			generic = new GenericEntity<List<SecurityClass>>(sec) {
+			};
+		} catch (Exception e) {
+			return ExceptionResponse(e);
+		}
+
+		return Response.status(Response.Status.OK).entity(generic).build();
+	}
+	
+	private Response ValidationResponse(ValidationException e)
+	{
+		ErrorResponse r = new ErrorResponse();
+
+		r.setErrorId(300);
+		r.setErrorCode(e.getMessage());
+
+		ResponseBuilder response = Response.status(300);
+		response.entity(r);
+
+		return response.build();
+	}
+	
+	private Response ExceptionResponse(Exception e)
+	{
+		ErrorResponse r = new ErrorResponse();
+
+		r.setErrorId(500);
+		r.setErrorCode(e.getMessage());
+
+		ResponseBuilder response = Response.status(500);
+		response.entity(r);
+
+		return response.build();
+	}
+	
+}

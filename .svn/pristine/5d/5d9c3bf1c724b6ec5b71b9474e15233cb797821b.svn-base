@@ -1,0 +1,187 @@
+package model;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.NamedNativeQueries;
+import javax.persistence.NamedNativeQuery;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+/**
+ * Entity bean with JPA annotations Hibernate provides JPA implementation
+ * 
+ * @author Ryan Dekker
+ *
+ */
+@Entity
+@Table(name="WFD0000_PROJECT_IDS")
+public class ProjectId implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@Column(name="BUSINESS_UNIT", nullable=false, length=5)
+	private String businessUnit;
+
+	@Column(length=5)
+	private String department;
+
+	@Temporal(TemporalType.DATE)
+	@Column(name="INSERT_DATE", nullable=false)
+	private Date insertDate;
+
+	@Column(name="INSERT_PGM_NAME", nullable=false, length=400)
+	private String insertPgmName;
+
+	@Column(name="INSERT_USER", nullable=false, length=30)
+	private String insertUser;
+
+	@Column(name="INTEGRATION_TEMPLATE_ID", length=15)
+	private String integrationTemplateId;
+
+	@Column(name="PROJECT_DESCRIPTION", length=100)
+	private String projectDescription;
+
+	@Column(name="PROJECT_ID", nullable=false, length=7)
+	private String projectId;
+
+	@Column(name="PROJECT_TYPE", length=10)
+	private String projectType;
+
+	@Column(length=1)
+	private String status;
+
+	@Temporal(TemporalType.DATE)
+	@Column(name="STATUS_DATE")
+	private Date statusDate;
+
+	@Temporal(TemporalType.DATE)
+	@Column(name="UPDATE_DATE")
+	private Date updateDate;
+
+	@Column(name="UPDATE_PGM_NAME", length=400)
+	private String updatePgmName;
+
+	@Column(name="UPDATE_USER", length=30)
+	private String updateUser;
+
+	public ProjectId() {
+	}
+
+	public String getBusinessUnit() {
+		return this.businessUnit;
+	}
+
+	public void setBusinessUnit(String businessUnit) {
+		this.businessUnit = businessUnit;
+	}
+
+	public String getDepartment() {
+		return this.department;
+	}
+
+	public void setDepartment(String department) {
+		this.department = department;
+	}
+
+	public Date getInsertDate() {
+		return this.insertDate;
+	}
+
+	public void setInsertDate(Date insertDate) {
+		this.insertDate = insertDate;
+	}
+
+	public String getInsertPgmName() {
+		return this.insertPgmName;
+	}
+
+	public void setInsertPgmName(String insertPgmName) {
+		this.insertPgmName = insertPgmName;
+	}
+
+	public String getInsertUser() {
+		return this.insertUser;
+	}
+
+	public void setInsertUser(String insertUser) {
+		this.insertUser = insertUser;
+	}
+
+	public String getIntegrationTemplateId() {
+		return this.integrationTemplateId;
+	}
+
+	public void setIntegrationTemplateId(String integrationTemplateId) {
+		this.integrationTemplateId = integrationTemplateId;
+	}
+
+	public String getProjectDescription() {
+		return this.projectDescription;
+	}
+
+	public void setProjectDescription(String projectDescription) {
+		this.projectDescription = projectDescription;
+	}
+
+	public String getProjectId() {
+		return this.projectId;
+	}
+
+	public void setProjectId(String projectId) {
+		this.projectId = projectId;
+	}
+
+	public String getProjectType() {
+		return this.projectType;
+	}
+
+	public void setProjectType(String projectType) {
+		this.projectType = projectType;
+	}
+
+	public String getStatus() {
+		return this.status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
+	public Date getStatusDate() {
+		return this.statusDate;
+	}
+
+	public void setStatusDate(Date statusDate) {
+		this.statusDate = statusDate;
+	}
+
+	public Date getUpdateDate() {
+		return this.updateDate;
+	}
+
+	public void setUpdateDate(Date updateDate) {
+		this.updateDate = updateDate;
+	}
+
+	public String getUpdatePgmName() {
+		return this.updatePgmName;
+	}
+
+	public void setUpdatePgmName(String updatePgmName) {
+		this.updatePgmName = updatePgmName;
+	}
+
+	public String getUpdateUser() {
+		return this.updateUser;
+	}
+
+	public void setUpdateUser(String updateUser) {
+		this.updateUser = updateUser;
+	}
+
+}
